@@ -1,0 +1,181 @@
+---
+title: "Intro to R - Lesson 1:  The Very Basics"
+output: learnr::tutorial
+runtime: shiny_prerendered
+author: "Prof. Jessica (Mathematics) and Dr. Haffner (Geography)"
+date: '`r Sys.Date()`'
+
+
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+x = c(4:6,10:12)
+A = matrix(c(1:4,9:12),ncol=2)
+
+```
+
+#### <span style="color:Blue">**Intellectual Property:**</span>  
+This tutorial is the intellectual property of the instructors and may not be reproduced outside of this course.
+
+## Example code line ##
+
+This code computes the answer to one plus one, change it so it computes two plus two:
+
+   * Run the code
+   * Type a different addition
+   * Try some other arithmetic
+
+**Note**: You can run a single line (with cursor in-line) by typing Ctrl-Enter or Command-Enter.
+
+```{r trytoadd, exercise=T}
+1+1
+8*7
+```
+
+## Vectors and arrays ##
+### Entering / manipulating data in R ### 
+
+Suppose we have a small dataset that can easily be entered by hand. We enter the data in the main dialog box using the general vector function c() and the matrix function matrix().
+
+Let's try entering some data.  Anytime we enter data, it needs to be "stored".  We need to:
+
+   * Name a location (variable, or matrix, or data frame) to store the data
+   * Assign (using either <- or =) the values to the storage location
+   * Recall the values by typing the storage name
+
+```{r storage, exercise=TRUE}
+# try typing y; what happens?
+# y is not a defined variable
+
+x = 7
+x     # a single value can be stored in the location x
+
+x = c(4:6,10:12)
+x     # a "column vector", which is what the c() command denotes, stored in x
+
+A = matrix(c(1:4,9:12),ncol=2)
+A     # we can us the matrix function to store a two-dimensional array
+
+# there is also ways to make larger-dimensional arrays, but these are rarely used
+```
+
+
+
+## Data subsets ##
+### Entering / manipulating data in R ### 
+
+  We can choose a subset of a variable or array by using brackets, [ ], following the variable name.
+
+```{r subsets, exercise=TRUE}
+#this is a comment
+print(c("x-vector is", x))
+x[1]  # first element of x
+x[1:3]  # first three elements of x
+x[c(2,4)]  # second and fourth elements of x
+
+pizza = c(9, 12, 15)  #call a variable whatever you like
+pizza
+piz_za = c(16,-3)  # adding symbols makes a new variable
+piz_za
+Pizza  = c(1, 8, -5)  # so does capitalization, importantly and annoyingly
+
+A  # matrix
+A[1:2,1]  # first two rows and first column
+A[1:2,][,1]  # ditto
+A[c(2,4),]  # second and fourth rows
+A[,1]  # first column
+```
+
+## Manipulating variables ##
+### Entering / manipulating data in R ### 
+
+Mathematical functions in R work “element-wise”, meaning they are applied to each element in the vector / array.
+
+```{r constant, exercise=TRUE}
+x 
+3*x
+x-3
+
+A
+3*A
+A-3
+```
+
+
+## Using data frames ##
+### Entering / manipulating data in R ### 
+
+A **data frame** is a structure with:
+
+   * rows representing observations; 
+   * columns representing variables; and 
+   * column names (**headers**) attached to the variables.
+   
+Referencing the variables:
+
+   * Ideally, use the operator $ to "peel off" a variable; or
+   * can "attach" the data frame.
+   
+```{r dataframe, exercise=TRUE}
+data(iris)  # this is a "base" data frame / set in R
+iris[c(1, 51,101),]
+iris$Sepal.Length[1:5]  # recognizes values
+
+# try typing Sepal.Length; what happens when you try to run?
+
+attach(iris)
+ Sepal.Length  # now connected
+detach(iris)  # remember to detach when you are done with analysis, if you attach! 
+```
+
+##  Comparison operators ##
+### Entering / manipulating data in R ### 
+
+We can use a variety of logical checks and comparisons to work with data:
+
+   * Less than (or equal to):  < or <=
+   * Greater than (or equal to):  > or >=
+   * Equal to:  ==
+   * Not equal to !=
+
+Each comparison results in a logical vector, that is, a vector of TRUE or FALSE values, produced element-wise.
+
+```{r comparisons, exercise=TRUE}
+data(iris)  # this is a "base" data frame / set in R
+iris$Petal.Length
+iris$Petal.Length > 1.5
+iris$Petal.Length <= 1.5
+iris$Petal.Length == 1.5
+iris$Petal.Length != 1.5
+
+#using the logical vector to subset
+iris$Sepal.Length[iris$Petal.Length == 1.5]
+
+```
+
+##  Simple functions ##
+
+Functions in R are identified by a word, followed by parantheses with arguments inside:
+
+*function*(*argument1*, *argument2*, ...)
+
+Many are intuitive, but others may need searching.  You may search for a topic by:
+
+??"*topic key words*"
+
+Then use 
+
+help(*function*) 
+
+for details on its usage.
+
+```{r functions, exercise=TRUE}
+??"histogram"  # search for how to make a histogram
+
+hist(x = iris$Petal.Length)  # make a histogram of Petal Lengths, all other arguments defaults
+hist(x = iris$Petal.Length, breaks = 8)  # make a histogram of Petal Lengths, specifying 8 groups
+hist(iris$Petal.Length, 8)  # make a histogram of Petal Lengths, requires that arguments be in correct order
+```
+
+
