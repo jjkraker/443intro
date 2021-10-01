@@ -1,0 +1,220 @@
+---
+title: "Contrasts:  Pre-Planned and Simultaneous"
+output: learnr::tutorial
+runtime: shiny_prerendered
+author: "Prof. Jessica"
+date: '`r Sys.Date()`'
+
+
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(multcomp)
+library(DescTools) # install first
+library(readxl)
+wheat3 <- read_excel("wheat3.xlsx")
+
+wheat3$Type.f = factor(wheat3$Type,levels = c("winter","spring","hybrid")) 
+fit3 = aov(ProteinConc ~ Type.f, data=wheat3)	 # perform the ANOVA computations and store
+
+n = 24; trt = 3
+s = sigma(fit3); s              # or, get from above output
+
+library(gmodels)                  # install first
+contrast = c(0, 1, -1)      # must match level orderings!!!
+fit.contrast(fit3, "Type.f", contrast)    # performs the “contrast”
+results = fit.contrast(fit3, "Type.f", contrast) 
+
+contrast.point = results[1]  # point estimate
+contrast.SE = results[2]  # standard error of point estimate
+contrast.point; contrast.SE; alpha = 0.05
+alpha.E = 0.05  # experimentwise error rate
+h = 3
+alpha.C = alpha.E/h
+
+library(DescTools) # install first
+```
+
+#### <span style="color:Blue">**Intellectual Property:**</span>  
+This tutorial is the intellectual property of the instructors and may not be reproduced outside of this course.
+
+
+## Wheat data
+We will be working with the wheat data throughout this tutorial, walking through the lecture code (reference Lectures 5 and 6)
+
+```{r data, eval=F}
+library(readxl)
+wheat3 <- read_excel("wheat3.xlsx")
+```
+Note:  this is *not* in exercise format; the commands run automatically.
+
+## Working with levels of a factor 
+
+**Participation points**:  Which level is listed first in the default ordering?
+
+When we make a variable into a factor for use in ANOVA and follow-up analyses, the levels will default to an alphabetical or numeric ordering.  
+```{r defaultordering, exercise=TRUE}
+factor(wheat3$Type)  # this is the factor values with the default levels
+levels(factor(wheat3$Type) )  # or just take a look at the levels
+boxplot(ProteinConc~Type,data=wheat3)
+```
+
+Often, this will *not* coincide with our preferred ordering.  So, we can use the <font face="Courier">levels=</font> argument in the <font face="Courier">factor</font> function:
+
+   
+```{r specifiedordering, exercise=TRUE}
+wheat3$Type.f = factor(wheat3$Type,levels = c("winter","spring","hybrid"))  # specify level ordering
+levels(wheat3$Type.f)   # just take a look at the levels
+boxplot(ProteinConc~Type.f,data=wheat3)
+```
+
+## Preliminaries (review ANOVA commands)
+
+**Participation points**:  What is the total sample size *n*?  What is the number of replications *r*?
+
+Preliminaries - we will run ANOVA, as we have done previously, as well as storing important information from the output:
+
+
+```{r preliminaries}
+# ANOVA
+fit3 = aov(ProteinConc ~ Type.f, data=wheat3)	 # perform the ANOVA computations and store
+summary(fit3)	              # summarize the output, including ANOVA table
+print(fit3)
+
+n = 24; trt = 3
+s = sigma(fit3); s              # or, get from above output
+```
+Note:  this is *not* in exercise format; the commands run automatically.
+
+## Pre-planned contrasts
+
+**Participation points**:  What is the P-value for a test of $$H_1:  \mu_2 \ne \mu_3$$?
+
+Now, we are ready to estimate the planned contrast:  $$\mu_2-\mu_3$$
+
+Note that, for this contrast, in class we identified the contrast coefficients:  $$k_1 = 0$$, $$k_2 = 1$$, $$k_3 = -1$$, so we will list those off in a variable called <font face="Courier">contrast</font>.  We then use the ``glht()`` function to compute inferential summaries (point estimate, standard error, test statistic, and P-value) for that contrast.
+
+
+
+```{r backgrounddefine2, echo=F}
+wheat3$Type.f = factor(wheat3$Type,levels = c("winter","spring","hybrid")) 
+```
+
+Note that the output from ``results`` is a list, so we use functions to pick elements off and run test / make interval:
+```{r contrastfit, exercise=T}
+contrast = c(0, 1, -1)      # must match level orderings!!!
+
+# fit contrast
+library(multcomp)
+results = glht(fit3, mcp(Type.f=contrast))
+
+# computed statistics
+summary(results)
+# computed interval
+confint(results)
+```
+
+
+
+
+
+
+
+## Simultaneous contrasts - Bonferroni 
+
+We start with the necessary setup, using experimentwise error rate of 0.05.  Since we compute the Bonferroni intervals for each of three possible comparisons, we use *h*=3:  
+```{r bonfsetup, exercise=T}
+alpha.E = 0.05  # experimentwise error rate
+# specifcally for three Bonferroni intervals
+h = 3
+alpha.C = alpha.E/h
+1-(alpha.C/2)
+```
+
+The three comparisons look at comparing each treatment mean to the average for the other two treatments. 
+$$\mu_1-\frac{\mu_2+\mu_3}{2}$$
+
+```{r bonfcomp1, exercise=T}
+contrast1 = c(1,-.5,-.5)      # must fill in for chosen contrast
+
+results1 = glht(fit3, mcp(Type.f=contrast1))
+summary(results1)
+confint(results1, level=1-alpha.C)
+```
+
+$$\mu_2-\frac{\mu_1+\mu_3}{2}$$
+
+```{r bonfcomp2, exercise=T}
+contrast2 = c(-.5,1,-.5)      # must fill in for chosen contrast
+
+results2 = glht(fit3, mcp(Type.f=contrast2))
+summary(results2)
+confint(results2, level=1-alpha.C)
+```
+
+$$\mu_3-\frac{\mu_1+\mu_2}{2}$$
+
+```{r bonfcomp3, exercise=T}
+contrast3 = c(-.5,-.5,1)      # must fill in for chosen contrast
+
+results3 = glht(fit3, mcp(Type.f=contrast3))
+summary(results3)
+confint(results3, level=1-alpha.C)
+```
+
+
+## Simultaneous contrasts - Scheffe 
+
+Next, we use Scheffe with an overall bound on the experimentwise error rate, covering all possible contrasts.  We again look at comparing each treatment mean to the average for the other two treatments. 
+
+
+$$\mu_1-\frac{\mu_2+\mu_3}{2}$$
+
+```{r scheffecomp1, exercise=T}
+library(DescTools) # install first
+
+contrast1 = c(1,-.5,-.5)      # must fill in for chosen contrast
+ScheffeTest(fit3,"Type.f", contrasts=contrast1, conf.level = 1-alpha.E)
+```
+
+$$\mu_2-\frac{\mu_1+\mu_3}{2}$$
+
+```{r scheffecomp2, exercise=T}
+contrast2 = c(-.5,1,-.5)      # must fill in for chosen contrast
+ScheffeTest(fit3,"Type.f", contrasts=contrast2, conf.level = 1-alpha.E)
+```
+
+$$\mu_3-\frac{\mu_1+\mu_2}{2}$$
+
+```{r scheffecomp3, exercise=T}
+contrast3 = c(-.5,-.5,1)      # must fill in for chosen contrast
+ScheffeTest(fit3,"Type.f", contrasts=contrast3, conf.level = 1-alpha.E)
+```
+
+## Simultaneous contrasts - pairwise comparisons:
+
+**Participation points**:  Report each 95% confidence interval for the pairwise comparison $$\mu_3-\mu_2$$ for each of the four simultaneous methods:  Bonferroni, Scheffe, Tukey's HSD, and Fisher's LSD.
+
+All pairwise using Bonferroni:
+```{r allpairbonf, exercise=T}
+library(DescTools) # install first
+
+PostHocTest(fit3, method = "bonferroni", conf.level = 1-alpha.E)
+```
+
+All pairwise using Scheffe:
+```{r allpairscheffe, exercise=T}
+PostHocTest(fit3, method =  "scheffe",conf.level = 1-alpha.E)
+```
+
+All pairwise using Tukey's HSD:
+```{r allpairhsd, exercise=T}
+PostHocTest(fit3, method = "hsd", conf.level = 1-alpha.E)
+```
+
+All pairwise using Fisher's LSD:
+```{r allpairlsd, exercise=T}
+PostHocTest(fit3, method = "lsd", conf.level = 1-alpha.E)
+```
+
