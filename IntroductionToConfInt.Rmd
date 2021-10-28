@@ -1,0 +1,128 @@
+---
+title: "Intro to Confidence Intervals"
+output: learnr::tutorial
+runtime: shiny_prerendered
+author: "Prof. Jessica"
+date: '`r Sys.Date()`'
+
+
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+niter = 1000000
+
+```
+
+#### <span style="color:Blue">**Intellectual Property:**</span>  
+This tutorial is the intellectual property of the instructors and may not be reproduced outside of this course.
+
+# The Computer-Chips Example #
+
+## - Sampling Distribution ##
+
+Suppose the true proportion of defective computer chips in a very large shipment) is 0.10. If we considered all possible random samples of n = 1000 chips, the sampling distribution of $\hat{p}$ is N (0.10, 0.009487). What does this mean visually?
+
+```{r trytoadd, exercise=T,fig.height=6}
+p = 0.10  # true proportion of "successes" (defectives)
+n = 1000  # sample size
+
+manyX = rbinom(niter, n, p)
+manyphat = manyX/n
+
+hist(manyphat,breaks=50,prob=T,
+     xlim=c(max(0,p-4*sqrt(p*(1-p)/n)),p+4*sqrt(p*(1-p)/n)),
+     ylim = c(0,dnorm(p,p,sqrt(p*(1-p)/n))),
+     ylab="", yaxt = "n")
+# now add the approximation from Central Limit Theorem
+curve(dnorm(x,mean=p,sd=sqrt(p*(1-p)/n)),add=T,col="orange",lwd=2)
+print(paste("Orange curve is a normal curve with mean=",p, "and standard devation", round(sqrt(p*(1-p)/n),6)))
+print(paste("Purple line is at the mean", p, " and dashed purple lines are at 2 standard deviations (a distance of", round(2*sqrt(p*(1-p)/n),6), "on either side of the mean."))
+abline(v=p,col="purple",lwd=2)
+abline(v=p+c(-1,1)*2*sqrt(p*(1-p)/n),col="purple",lty=2)
+```
+
+## - a Confidence Interval ##
+
+We start with the density curve from the *theoretical* sampling distribution.
+
+Let's add a sample proportion + "confidence interval" in blue:
+
+```{r addone, exercise=T,fig.height=6}
+p = 0.10  # true proportion of "successes" (defectives)
+n = 1000  # sample size
+
+# just density curve
+curve(dnorm(x,mean=p,sd=sqrt(p*(1-p)/n)),
+     xlim=c(max(0,p-4*sqrt(p*(1-p)/n)),p+4*sqrt(p*(1-p)/n)),
+     ylim = c(0,dnorm(p,p,sqrt(p*(1-p)/n))),
+     col="orange",lwd=2,
+     xlab = "phat",
+     main="View a single confidence interval",
+     ylab="", yaxt = "n")
+print(paste("Orange curve is a normal curve with mean=",p, "and standard devation", round(sqrt(p*(1-p)/n),6)))
+print(paste("Purple line is at the mean", p, " and dashed purple lines are at 2 standard deviations (a distance of", round(2*sqrt(p*(1-p)/n),6), "on either side of the mean."))
+abline(v=p,col="purple",lwd=2)
+abline(v=p+c(-1,1)*2*sqrt(p*(1-p)/n),col="purple",lty=2)
+abline(h=0)
+
+# CI from one such sample
+phat = rbinom(1,n,p)/n
+segments(phat-2*sqrt(phat*(1-phat)/n),0,phat+2*sqrt(phat*(1-phat)/n),0,lwd=3,col="turquoise")
+points(phat,0,xlim = c(p+5*c(-1,1)*sqrt(p*(1-p)/n)), ylim=c(0,2),pch=16,col="blue")
+print(paste("With 95% confidence, we estimate p to be between",
+            round(phat-2*sqrt(phat*(1-phat)/n),4),
+            "and",
+            round(phat+2*sqrt(phat*(1-phat)/n),4)
+            ))
+
+```
+
+## - Understanding Confidence *Level* ##
+
+Now, what if we did this for lots and lots of samples?  That is, for each of many samples, we get a sample proportion $\hat{p}$ and compute a confidence interval
+
+```{r conflevel, exercise=T,echo=F,fig.height=6}
+p = 0.10  # true proportion of "successes" (defectives)
+n = 1000  # sample size
+
+nsim = 100  # specify how many simulations
+# simulate a LOT of ybar values, for a LOT of samples
+allbinomy = rbinom(nsim,n,p)  # simulate the nsim binomial y-values
+allphat = round(allbinomy/n,4)  # compute phat = y/n for each of nsim samples
+allCIlower = round(allphat-2*sqrt(allphat*(1-allphat)/n),4)
+allCIupper = round(allphat+2*sqrt(allphat*(1-allphat)/n),4)
+
+
+# just density curve
+curve(dnorm(x,mean=p,sd=sqrt(p*(1-p)/n)),
+     xlim=c(max(0,p-4*sqrt(p*(1-p)/n)),p+4*sqrt(p*(1-p)/n)),
+     ylim = c(0,dnorm(p,p,sqrt(p*(1-p)/n))),
+     col="orange",lwd=2,
+     xlab = "phat",
+     main="View many such confidence intervals",
+     ylab="", yaxt = "n")
+
+abline(v=p,col="purple",lwd=2)
+abline(v=p+c(-1,1)*2*sqrt(p*(1-p)/n),col="purple",lty=2)
+abline(h=0)
+
+whichout <- which(abs(allphat-p) > 2*sqrt(p*(1-p)/n))
+print(paste("We see", length(whichout), "of the samples have sample proportions (yellow dots) MORE than two standard deviations from the mean; thus",length(whichout)/nsim*100, "% of the intervals do NOT contain the true p, while",100-length(whichout)/nsim*100, "% of the intervals actually contain the true p."))
+
+# maximum height
+maxht = dnorm(p,p,sqrt(p*(1-p)/n))
+
+# plot CIs from the nsim simulated samples
+for (i in 1:nsim) {
+  segments(allCIlower[i],i/nsim/1.5*maxht,allCIupper[i],i/nsim/1.5*maxht,lwd=2,col="turquoise")
+  points(allphat[i],i/nsim/1.5*maxht,pch=16,col="blue")
+}
+
+for (i in whichout) {
+  segments(allCIlower[i],i/nsim/1.5*maxht,allCIupper[i],i/nsim/1.5*maxht,lwd=2,col="red")
+  points(allphat[i],i/nsim/1.5*maxht,pch=16,col="yellow")
+}
+
+```
+
